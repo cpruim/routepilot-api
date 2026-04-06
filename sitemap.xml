@@ -2,22 +2,27 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://routepilot.live/api/next-chargers</loc>
-    <lastmod>2026-04-02T10:45:00+00:00</lastmod>
+    <lastmod>2026-04-03T23:00:00+00:00</lastmod>
     <changefreq>daily</changefreq>
   </url>
   <url>
     <loc>https://routepilot.live/api/next-charging-locations</loc>
-    <lastmod>2026-04-02T10:45:00+00:00</lastmod>
+    <lastmod>2026-04-03T23:00:00+00:00</lastmod>
     <changefreq>daily</changefreq>
   </url>
   <url>
     <loc>https://routepilot.live/api/next-chargers-from-gps</loc>
-    <lastmod>2026-04-02T10:45:00+00:00</lastmod>
+    <lastmod>2026-04-03T23:00:00+00:00</lastmod>
     <changefreq>daily</changefreq>
   </url>
   <url>
     <loc>https://routepilot.live/api/match-corridor-from-gps</loc>
-    <lastmod>2026-04-02T10:45:00+00:00</lastmod>
+    <lastmod>2026-04-03T23:00:00+00:00</lastmod>
     <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://routepilot.live/api/qa-review-points</loc>
+    <lastmod>2026-04-03T22:30:00+00:00</lastmod>
+    <changefreq>weekly</changefreq>
   </url>
 </urlset>

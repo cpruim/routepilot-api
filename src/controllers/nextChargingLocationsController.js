@@ -1,7 +1,7 @@
 import * as nextChargingLocationsService from '../services/nextChargingLocationsService.js';
 
 /**
- * GET /api/next-charging-locations — bewust public.rp_api_next_charging_locations_v7_1(corridorKey, currentM, limit);
+ * GET /api/next-charging-locations — public.rp_api_next_charging_locations_v1 met named args + p_bucket_size_m;
  * response: { data } met expliciete snake_case → camelCase mapping in de service.
  */
 export async function getNextChargingLocations(req, res) {

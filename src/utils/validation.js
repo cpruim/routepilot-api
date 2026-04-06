@@ -73,6 +73,57 @@ export function validateNextChargersParams(query) {
 /**
  * Parse corridors limit from query. Returns { limit } with limit between 1 and 500.
  */
+const QA_MOTORWAYS = new Set(['A2', 'A4', 'A12', 'A27', 'A58', 'A59']);
+const QA_DIRECTIONS = new Set(['FWD', 'REV']);
+const QA_CATEGORIES = new Set(['all', 'baseline', 'around_location', 'cluster', 'tricky']);
+
+/**
+ * Validate GET /api/qa-review-points query params.
+ */
+export function validateQaReviewPointsParams(query) {
+  const motorwayRaw = query?.motorway;
+  if (motorwayRaw === undefined || motorwayRaw === null || motorwayRaw === '') {
+    return { valid: false, statusCode: 400, message: 'Missing required query parameter: motorway' };
+  }
+  const motorway = String(motorwayRaw).trim().toUpperCase();
+  if (!QA_MOTORWAYS.has(motorway)) {
+    return {
+      valid: false,
+      statusCode: 400,
+      message: `motorway must be one of: ${[...QA_MOTORWAYS].sort().join(', ')}`,
+    };
+  }
+
+  const directionRaw = query?.direction;
+  if (directionRaw === undefined || directionRaw === null || directionRaw === '') {
+    return { valid: false, statusCode: 400, message: 'Missing required query parameter: direction' };
+  }
+  const direction = String(directionRaw).trim().toUpperCase();
+  if (!QA_DIRECTIONS.has(direction)) {
+    return { valid: false, statusCode: 400, message: 'direction must be FWD or REV' };
+  }
+
+  let category = 'all';
+  const categoryRaw = query?.category;
+  if (categoryRaw !== undefined && categoryRaw !== null && categoryRaw !== '') {
+    const catTrim = String(categoryRaw).trim().toLowerCase();
+    if (catTrim === '') {
+      category = 'all';
+    } else {
+      category = catTrim === 'around-location' ? 'around_location' : catTrim;
+      if (!QA_CATEGORIES.has(category)) {
+        return {
+          valid: false,
+          statusCode: 400,
+          message: `category must be one of: ${[...QA_CATEGORIES].sort().join(', ')}`,
+        };
+      }
+    }
+  }
+
+  return { valid: true, motorway, direction, category };
+}
+
 export function parseCorridorsLimit(query) {
   const defaultLimit = 50;
   const maxLimit = 500;

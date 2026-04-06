@@ -1,7 +1,7 @@
 import * as nextChargersService from '../services/nextChargersService.js';
 
 /**
- * GET /api/next-chargers — public.rp_api_next_charging_locations_v5_8 (geen fallback naar oudere functies).
+ * GET /api/next-chargers — v7_1 + zelfde noise-filter als GPS-route; interne over-fetch zodat limit=5 gevuld blijft.
  */
 export async function getNextChargers(req, res, next) {
   try {

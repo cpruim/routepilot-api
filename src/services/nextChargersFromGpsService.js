@@ -3,18 +3,13 @@
  */
 import { pool } from '../db/pool.js';
 import { nextChargersFromGpsV1 } from '../db/queries.js';
+import { mapRowToNextChargerLocationCard } from '../utils/mapNextChargerLocationCard.js';
 
 function toNum(v) {
   if (v == null) return null;
   if (typeof v === 'number' && !Number.isNaN(v)) return v;
   const n = Number(v);
   return Number.isNaN(n) ? null : n;
-}
-
-function toInt(v) {
-  const n = toNum(v);
-  if (n == null) return null;
-  return Math.trunc(n);
 }
 
 /**
@@ -27,30 +22,6 @@ function matchFromRow(row) {
     corridorKey: String(row.corridor_key),
     currentM: toNum(row.current_m),
     confidence: conf != null && conf !== '' ? String(conf) : null,
-  };
-}
-
-/**
- * @param {Record<string, unknown>} row
- */
-function locationFromRow(row) {
-  return {
-    rank: toInt(row.location_rank),
-    id: row.location_id != null ? String(row.location_id) : null,
-    title: row.card_title != null ? String(row.card_title) : null,
-    siteName: row.site_name != null ? String(row.site_name) : null,
-    brands: row.brand_summary != null ? String(row.brand_summary) : null,
-    accessMode: row.access_mode != null ? String(row.access_mode) : null,
-    locationType: row.location_type != null ? String(row.location_type) : null,
-    distanceM: toNum(row.distance_to_location_m),
-    distanceKm: toNum(row.distance_to_location_km),
-    distanceLabel: row.distance_display != null ? String(row.distance_display) : null,
-    detourSeconds: toInt(row.detour_seconds) ?? 0,
-    detourLabel: row.detour_label != null ? String(row.detour_label) : null,
-    maxPowerKw: toNum(row.max_power_kw),
-    totalConnectors: toInt(row.total_connectors) ?? 0,
-    availableConnectors: toInt(row.available_connectors) ?? 0,
-    routeContext: row.route_context != null ? String(row.route_context) : null,
   };
 }
 
@@ -74,7 +45,7 @@ export async function getNextChargersFromGps(lat, lon, heading, limit) {
   }
 
   const match = matchFromRow(rows[0]);
-  const locations = rows.map((r) => locationFromRow(r));
+  const locations = rows.map((r) => mapRowToNextChargerLocationCard(r));
 
   console.log('[RP API] next-chargers-from-gps', {
     corridorKey: match?.corridorKey ?? null,

@@ -1,5 +1,5 @@
 /**
- * Map één rij van public.rp_api_next_charging_locations_v7_1 naar API JSON (camelCase).
+ * Map één rij van public.rp_api_next_charging_locations_v1 (zelfde kolommen als voorheen v7_1) naar API JSON (camelCase).
  * Expliciete kolom-mapping (geen blind doorgeven van raw rows).
  */
 

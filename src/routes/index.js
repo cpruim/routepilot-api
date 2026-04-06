@@ -7,6 +7,7 @@ import nextChargersFromGpsRoutes from './nextChargersFromGps.js';
 import matchCorridorFromGpsRoutes from './matchCorridorFromGps.js';
 import chargersRoutes from './chargers.js';
 import chargingLocationAvailabilityRoutes from './chargingLocationAvailability.js';
+import qaReviewPointsRoutes from './qaReviewPoints.js';
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use('/api/next-chargers-from-gps', nextChargersFromGpsRoutes);
 router.use('/api/match-corridor-from-gps', matchCorridorFromGpsRoutes);
 router.use('/api/chargers', chargersRoutes);
 router.use('/api/charging-location-availability', chargingLocationAvailabilityRoutes);
+router.use('/api/qa-review-points', qaReviewPointsRoutes);
 
 export default router;

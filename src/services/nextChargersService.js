@@ -1,14 +1,25 @@
 /**
- * GET /api/next-chargers: één call naar public.rp_api_next_charging_locations_v5_8.
- * `data` bevat ruwe rijen (snake_case kolomnamen zoals pg die teruggeeft).
+ * GET /api/next-chargers: zelfde bron als GPS-route — v7_1 + dezelfde Vattenfall/Unknown-filter.
+ * Haalt bewust méér rijen op dan `limit` (zoals GPS zou moeten na filter) zodat na filter
+ * alsnog genoeg locaties overblijven; ranks worden client-side 1..n.
  */
 import { pool } from '../db/pool.js';
-import { nextChargingLocationsV58, corridorLengthByCorridorKey } from '../db/queries.js';
+import {
+  nextChargingLocationsV71,
+  NEXT_CHARGING_LOCATIONS_BUCKET_SIZE_M,
+  corridorLengthByCorridorKey,
+} from '../db/queries.js';
+import {
+  isNoisyLowPowerVattenfallRow,
+  mapRowToNextChargerLocationCard,
+} from '../utils/mapNextChargerLocationCard.js';
 
-const FN_NAME = 'public.rp_api_next_charging_locations_v5_8';
+const FN_NAME = 'public.rp_api_next_charging_locations_v1 (named p_corridor_key, p_current_m, p_limit, p_bucket_size_m)';
 const DEFAULT_LIMIT = 5;
 const DEFAULT_MODE = 'through_trip';
 const DEFAULT_MIN_LOOKAHEAD_M = 100000;
+/** Genoeg kandidaten om na dezelfde noise-filter als GPS-route alsnog `limit` items te vullen. */
+const INTERNAL_V71_FETCH_CAP = 50;
 
 function bindCorridorKey(v) {
   if (v == null || v === '') return '';
@@ -54,8 +65,6 @@ export async function getNextChargers(corridorKey, currentM, limit, mode, minLoo
   const modeBound = bindMode(mode);
   const minLookaheadMBound = bindMinLookaheadM(minLookaheadM);
 
-  const params = [corridorKeyBound, currentMBound, limitBound, modeBound, minLookaheadMBound];
-
   try {
     console.log('[RP API] next-chargers: function called:', FN_NAME);
     console.log('[RP API] next-chargers: params', {
@@ -64,6 +73,7 @@ export async function getNextChargers(corridorKey, currentM, limit, mode, minLoo
       limit: limitBound,
       mode: modeBound,
       minLookaheadM: minLookaheadMBound,
+      note: 'mode/minLookaheadM worden niet meer naar de DB doorgegeven (v1-locaties-pipeline)',
     });
 
     let lengthM = null;
@@ -89,10 +99,29 @@ export async function getNextChargers(corridorKey, currentM, limit, mode, minLoo
       console.log('[RP API] next-chargers: geen length_m in rp_api_corridors voor deze key (of 0)');
     }
 
-    const result = await pool.query(nextChargingLocationsV58, params);
-    const data = result.rows ?? [];
+    const fetchLimit = Math.min(
+      INTERNAL_V71_FETCH_CAP,
+      Math.max(limitBound + 20, limitBound * 4)
+    );
+    const result = await pool.query(nextChargingLocationsV71, [
+      corridorKeyBound,
+      currentMBound,
+      fetchLimit,
+      NEXT_CHARGING_LOCATIONS_BUCKET_SIZE_M,
+    ]);
+    const rawRows = result.rows ?? [];
+    const filtered = rawRows.filter((r) => !isNoisyLowPowerVattenfallRow(r));
+    const capped = filtered.slice(0, limitBound);
+    const data = capped.map((r, idx) => {
+      const card = mapRowToNextChargerLocationCard(r);
+      return { ...card, rank: idx + 1 };
+    });
 
-    console.log('[RP API] next-chargers: row count:', data.length);
+    console.log('[RP API] next-chargers: row count:', data.length, {
+      rawFromDb: rawRows.length,
+      v71FetchLimit: fetchLimit,
+      afterNoiseFilter: filtered.length,
+    });
     if (data.length === 0) {
       console.warn(
         '[RP API] next-chargers: 0 rijen — check corridorKey/richting (FWD vs REV), currentM t.o.v. laadpalen vooruit, en of positie voorbij eind corridor'

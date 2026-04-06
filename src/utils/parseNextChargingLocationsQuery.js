@@ -1,6 +1,6 @@
 /**
  * Parse en valideer query parameters voor GET /api/next-charging-locations.
- * Roept intern alleen corridorKey, currentM en limit door naar rp_api_next_charging_locations_v7_1.
+ * Roept intern corridorKey, currentM en limit door; DB-query voegt vaste p_bucket_size_m toe (v1 named overload).
  */
 
 const DEFAULT_LIMIT = 5;

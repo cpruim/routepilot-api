@@ -41,21 +41,6 @@ export const nextChargersV3 = `
   FROM public.rp_api_next_chargers_v3($1::text, $2::numeric, $3::integer)
 `;
 
-/**
- * Next charging locations v5_8 (GET /api/next-chargers).
- * Params: corridorKey, currentM, limit, mode, min_lookahead_m.
- */
-export const nextChargingLocationsV58 = `
-  SELECT *
-  FROM public.rp_api_next_charging_locations_v5_8(
-    $1::text,
-    $2::numeric,
-    $3::integer,
-    $4::text,
-    $5::numeric
-  )
-`;
-
 /** Lengte corridor (m) voor diagnostiek bij /api/next-chargers. */
 export const corridorLengthByCorridorKey = `
   SELECT COALESCE(length_m, 0)::numeric AS length_m
@@ -83,13 +68,25 @@ export const matchCorridorsFromGpsHeading = `
 `;
 
 /**
- * Next charging locations ahead on corridor (v7_1 — bewuste productiebron).
- * Params: $1 corridorKey (text), $2 currentM (numeric), $3 limit (integer).
+ * Vaste bucket voor rp_api_next_charging_locations_v1(p_bucket_size_m); samen met named args
+ * voorkomt PostgreSQL-overload-resolutie (text, numeric, integer) → (text, numeric, numeric).
+ */
+export const NEXT_CHARGING_LOCATIONS_BUCKET_SIZE_M = 1000;
+
+/**
+ * Next charging locations ahead on corridor — rp_api_next_charging_locations_v1 4-arg overload,
+ * expliciet benoemde parameters (geen positionele 3-arg call naar v1).
+ * Params: $1 corridorKey (text), $2 currentM (numeric), $3 limit (integer), $4 bucket_size_m (integer).
  * DB snake_case wordt in mapNextChargingLocation expliciet naar API camelCase gemapt.
  */
 export const nextChargingLocationsV71 = `
   SELECT *
-  FROM public.rp_api_next_charging_locations_v7_1($1::text, $2::numeric, $3::integer)
+  FROM public.rp_api_next_charging_locations_v1(
+    p_corridor_key => $1::text,
+    p_current_m => $2::numeric,
+    p_limit => $3::integer,
+    p_bucket_size_m => $4::integer
+  )
 `;
 
 /**
@@ -123,4 +120,35 @@ export const nextChargersFromGpsV1 = `
  */
 export const locationAvailabilityV1 = `
   SELECT public.rp_api_location_availability_v1($1::text[]) AS data
+`;
+
+/**
+ * QA reviewpunten (corridor-based, geen GPS).
+ * Kolommen: review_id, motorway, corridor_key, current_m, category, label, source_label, priority.
+ * $1 = motorway (null = geen filter), $2 = direction FWD|REV (null = geen corridor_key-filter),
+ * $3 = category ('all' of null = geen category-filter).
+ * Sort: corridor_key, current_m.
+ */
+export const listQaReviewPointsV1 = `
+  SELECT
+    review_id,
+    motorway,
+    corridor_key,
+    current_m,
+    category,
+    label,
+    source_label,
+    priority
+  FROM public.rp_qa_review_points_v1
+  WHERE ($1::text IS NULL OR motorway = $1)
+    AND (
+      $2::text IS NULL
+      OR corridor_key LIKE ('NL_' || $1 || '_' || $2)
+    )
+    AND (
+      $3::text IS NULL
+      OR $3 = 'all'
+      OR category = $3
+    )
+  ORDER BY corridor_key, current_m
 `;
